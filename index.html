@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>TruthLens — AI Fake News Detector</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css?v=7"/>
+</head>
+<body>
+
+<!-- ANIMATED BACKGROUND -->
+<div class="bg-wrap">
+  <div class="bg-gradient"></div>
+  <canvas id="particleCanvas"></canvas>
+  <div class="bg-grid"></div>
+</div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="nav-inner">
+    <div class="nav-logo">
+      <div class="logo-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+      </div>
+      Truth<span>Lens</span>
+    </div>
+    <div class="nav-center">
+      <a href="#analyzer">Analyzer</a>
+      <a href="#features">Features</a>
+      <a href="#feed">Live Feed</a>
+    </div>
+    <div class="nav-status" id="apiStatus">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Connecting…</span>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="hero">
+  <div class="hero-inner">
+    <div class="hero-badge">
+      <span class="badge-dot"></span>
+      Real-time AI Misinformation Detection
+    </div>
+    <h1 class="hero-title">
+      Detect <span class="grad-text">Fake News</span><br>with AI Precision
+    </h1>
+    <p class="hero-sub">
+    </p>
+    <div class="hero-cta">
+      <a href="#analyzer" class="btn-primary">Start Analysing →</a>
+      <a href="#features" class="btn-ghost">See How It Works</a>
+    </div>
+
+    <!-- Floating AI messages -->
+    <div class="floating-msgs" id="floatingMsgs">
+      <div class="float-msg fm1">💬 Analyzing patterns in real-time...</div>
+      <div class="float-msg fm2">💬 Detecting misinformation signals...</div>
+      <div class="float-msg fm3">💬 AI confidence score generating...</div>
+      <div class="float-msg fm4">💬 Cross-referencing trusted sources...</div>
+      <div class="float-msg fm5">💬 Scanning for sensational language...</div>
+    </div>
+  </div>
+</section>
+
+<!-- ANALYZER -->
+<section class="section" id="analyzer">
+  <div class="container">
+    <div class="section-label">AI Analyzer</div>
+    <h2 class="section-title">Analyse Any Article</h2>
+    <p class="section-sub">Paste text or enter a URL — our AI will detect misinformation instantly.</p>
+
+    <!-- Tab bar -->
+    <div class="tab-bar">
+      <button class="tab-btn active" id="tabText" onclick="switchTab('text')">📝 Text Analysis</button>
+      <button class="tab-btn" id="tabUrl" onclick="switchTab('url')">🔗 URL Checker</button>
+    </div>
+
+    <div class="analyzer-wrap">
+      <!-- LEFT: Input panel -->
+      <div class="input-panel">
+
+        <!-- Text tab -->
+        <div class="tab-content active" id="contentText">
+          <div class="input-top">
+            <label class="input-label">Paste article text or headline</label>
+            <span class="char-count" id="charCount">0 chars</span>
+          </div>
+          <textarea
+            id="textInput"
+            class="main-textarea"
+            placeholder="e.g. BREAKING: Deep state using 5G towers to spread deadly radiation — government covering up deaths. Share before deleted!!!"
+            oninput="updateChar(this)"
+          ></textarea>
+        </div>
+
+        <!-- URL tab -->
+        <div class="tab-content" id="contentUrl">
+          <div class="input-top">
+            <label class="input-label">Enter article URL</label>
+          </div>
+          <input
+            type="url"
+            id="urlInput"
+            class="url-input"
+            placeholder="https://example.com/article..."
+          />
+          <div class="url-hint">Try: reuters.com · beforeitsnews.com · nature.com</div>
+        </div>
+
+        <!-- Actions -->
+        <div class="input-actions">
+          <button class="btn-analyze" id="analyzeBtn" onclick="handleAnalyze()">
+            <span class="btn-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+              </svg>
+            </span>
+            Analyse Now
+          </button>
+          <button class="btn-secondary" onclick="clearAll()">Clear</button>
+        </div>
+
+        <!-- Samples -->
+        <div class="samples-wrap">
+          <div class="samples-label">Try a sample:</div>
+          <div class="sample-pills">
+            <button class="s-pill fake" onclick="loadSample(0)">🔴 Conspiracy</button>
+            <button class="s-pill fake" onclick="loadSample(1)">🔴 Miracle Cure</button>
+            <button class="s-pill real" onclick="loadSample(2)">🟢 Reuters</button>
+            <button class="s-pill real" onclick="loadSample(3)">🟢 Science</button>
+            <button class="s-pill uncertain" onclick="loadSample(4)">🟡 Uncertain</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Result panel -->
+      <div class="result-panel" id="resultPanel">
+
+        <!-- Empty state -->
+        <div class="state-empty" id="stateEmpty">
+          <div class="empty-orb"></div>
+          <div class="empty-title">Ready to Analyse</div>
+          <div class="empty-sub">Paste text or a URL and click Analyse Now</div>
+        </div>
+
+        <!-- Typing animation state -->
+        <div class="state-typing" id="stateTyping" style="display:none">
+          <div class="typing-steps" id="typingSteps"></div>
+        </div>
+
+        <!-- Result state -->
+        <div class="state-result" id="stateResult" style="display:none">
+
+          <!-- Verdict banner -->
+          <div class="verdict-banner" id="verdictBanner">
+            <div class="verdict-icon" id="verdictIcon"></div>
+            <div class="verdict-info">
+              <div class="verdict-label" id="verdictLabel">LIKELY FAKE</div>
+              <div class="verdict-sublabel" id="verdictSub">Confidence Level: High</div>
+            </div>
+            <div class="verdict-pct" id="verdictPct">99.5%</div>
+          </div>
+
+          <!-- Confidence meter -->
+          <div class="meter-wrap">
+            <div class="meter-head">
+              <span class="meter-label">Confidence Meter</span>
+              <span class="meter-val" id="meterVal">0%</span>
+            </div>
+            <div class="meter-track">
+              <div class="meter-fill" id="meterFill"></div>
+            </div>
+            <div class="meter-scale">
+              <span>Low</span><span>Medium</span><span>High</span><span>Very High</span>
+            </div>
+          </div>
+
+          <!-- Prob bars -->
+          <div class="prob-bars">
+            <div class="prob-row">
+              <span class="prob-lbl">🔴 Fake</span>
+              <div class="prob-track"><div class="prob-fill fake" id="probFake"></div></div>
+              <span class="prob-num" id="probFakeNum">0%</span>
+            </div>
+            <div class="prob-row">
+              <span class="prob-lbl">🟢 Real</span>
+              <div class="prob-track"><div class="prob-fill real" id="probReal"></div></div>
+              <span class="prob-num" id="probRealNum">0%</span>
+            </div>
+          </div>
+
+          <!-- Reasons -->
+          <div class="reasons-wrap">
+            <div class="reasons-title">Analysis Reasons</div>
+            <div class="reasons-list" id="reasonsList"></div>
+          </div>
+
+          <!-- Engine badge -->
+          <div class="engine-badge-row" id="engineBadgeRow"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURE CARDS -->
+<section class="section features-section" id="features">
+  <div class="container">
+    <div class="section-label">How It Works</div>
+    <h2 class="section-title">Powered by 3-Tier AI</h2>
+    <div class="features-grid">
+      <div class="feat-card">
+        <div class="feat-icon">🧠</div>
+        <div class="feat-title">AI Detection</div>
+        <div class="feat-desc">Machine learning model trained on thousands of verified fake and real news articles for maximum accuracy.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">⚡</div>
+        <div class="feat-title">Real-time Analysis</div>
+        <div class="feat-desc">Results in under 200ms. Our rule engine gives instant feedback while the ML model processes in background.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📊</div>
+        <div class="feat-title">Confidence Score</div>
+        <div class="feat-desc">Every result comes with a confidence percentage and probability breakdown so you know how certain the AI is.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔍</div>
+        <div class="feat-title">Source Verification</div>
+        <div class="feat-desc">Detects citation of credible sources, academic journals, health authorities, and known misinformation domains.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🤖</div>
+        <div class="feat-title">BERT Language Model</div>
+        <div class="feat-desc">Browser-based BERT model understands context and meaning — not just keywords — for deeper understanding.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🛡️</div>
+        <div class="feat-title">55 Signal Patterns</div>
+        <div class="feat-desc">Weighted rule engine detects conspiracy language, sensationalism, miracle cures, and credibility markers.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LIVE FEED -->
+<section class="section feed-section" id="feed">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <div class="section-label">Live</div>
+        <h2 class="section-title">Detection Feed</h2>
+      </div>
+      <div class="live-pill">
+        <span class="live-dot"></span> Live Updates
+      </div>
+    </div>
+    <div class="feed-list" id="feedList"></div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-logo">Truth<span>Lens</span></div>
+      <div class="footer-links">
+        <span>AI-Powered</span>
+        <span>·</span>
+        <span>ML + NLP</span>
+        <span>·</span>
+        <span>3-Tier Engine</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+<script src="script.js?v=7"></script>
+</body>
+</html>
